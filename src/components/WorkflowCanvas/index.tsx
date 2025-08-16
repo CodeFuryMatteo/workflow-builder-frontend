@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import ReactFlow, {
   addEdge,
   Background,
@@ -19,17 +19,17 @@ import {
   TextField, 
   Stack, 
   Chip, 
-  Typography 
+  Typography
 } from '@mui/material';
-import { 
+import {
   PlayArrow as StartIcon,
   CheckBox as TaskIcon,
   Verified as ApprovalIcon,
   Schedule as DelayIcon,
-  Stop as EndIcon 
+  Stop as EndIcon
 } from '@mui/icons-material';
 import { nodeTypes } from './NodeTypes';
-import { Activity, WorkflowGraph } from '../../api/types';
+import { Activity, WorkflowGraph } from '../../api/workflowApi';
 
 interface WorkflowCanvasProps {
   initialNodes?: Node[];
@@ -46,7 +46,7 @@ interface WorkflowCanvasProps {
 const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
   initialNodes = [],
   initialEdges = [],
-  activities,
+  activities = [],
   onSave,
   onUpdate,
   isEditMode = false,
@@ -59,12 +59,21 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
   const [tags, setTags] = useState<string[]>(workflowTags);
   const [tagInput, setTagInput] = useState('');
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const initialized = useRef(false);
 
+  // Initialize nodes and edges only once
   useEffect(() => {
-    setNodes(initialNodes);
-    setEdges(initialEdges);
+    if (!initialized.current) {
+      if (initialNodes.length > 0) {
+        setNodes(initialNodes);
+      }
+      if (initialEdges.length > 0) {
+        setEdges(initialEdges);
+      }
+      initialized.current = true;
+    }
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   const onConnect = useCallback(
@@ -92,7 +101,6 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
   const onDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
-
       if (!reactFlowInstance) return;
 
       const type = event.dataTransfer.getData('application/reactflow');
@@ -153,6 +161,14 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
 
   const handleDeleteTag = (tagToDelete: string) => {
     setTags(tags.filter((tag) => tag !== tagToDelete));
+  };
+
+  const activityIcons = {
+    start: <StartIcon />,
+    task: <TaskIcon />,
+    approval: <ApprovalIcon />,
+    delay: <DelayIcon />,
+    end: <EndIcon />,
   };
 
   return (

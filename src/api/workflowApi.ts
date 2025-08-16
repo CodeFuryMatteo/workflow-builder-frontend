@@ -36,7 +36,7 @@ interface WorkflowEdge {
   target: string;
 }
 
-interface WorkflowGraph {
+export interface WorkflowGraph {
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
 }
